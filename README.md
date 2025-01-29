@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Biblia Digital
 
-## Getting Started
+Este proyecto es una aplicación web para leer la Biblia en español, desarrollada con Next.js, React y Tailwind CSS.
 
-First, run the development server:
+## Características
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Interfaz de usuario intuitiva y responsive
+- Selección de libros y capítulos de la Biblia
+- Visualización del texto bíblico en español (Reina Valera 1909)
+- Diseño moderno y accesible
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tecnologías utilizadas
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 13 con App Router
+- React 18
+- Tailwind CSS
+- TypeScript
+- API de Scripture (api.scripture.api.bible)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Cómo ejecutar el proyecto
 
-## Learn More
+1. Clona este repositorio
+2. Instala las dependencias con `npm install`
+3. Crea un archivo `.env.local` en la raíz del proyecto y añade tu API key:
 
-To learn more about Next.js, take a look at the following resources:
+4. Ejecuta el servidor de desarrollo con `npm run dev`
+5. Abre [http://localhost:3000](http://localhost:3000) en tu navegador
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estructura del proyecto
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `app/`: Contiene las rutas y componentes principales de la aplicación
+- `components/`: Componentes reutilizables
+- `lib/`: Funciones de utilidad y configuración
+- `styles/`: Estilos globales y configuración de Tailwind
 
-## Deploy on Vercel
+## Contribuciones
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Las contribuciones son bienvenidas. Por favor, abre un issue primero para discutir lo que te gustaría cambiar.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Licencia
+
+[MIT](https://choosealicense.com/licenses/mit/)
