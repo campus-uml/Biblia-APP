@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Open+Sans:wght@400;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -74,7 +74,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Lato", sans-serif;
+    font-family: "Open Sans", sans-serif;
   }
   h1,
   h2,
@@ -82,22 +82,32 @@
   h4,
   h5,
   h6 {
-    font-family: "Playfair Display", serif;
+    font-family: "Lora", serif;
   }
 }
 
 .bible-content {
-  font-family: "Playfair Display", serif;
+  font-family: "Lora", serif;
   line-height: 1.8;
+  font-size: 1.1rem;
+  text-align: justify;
+  color: #333;
 }
 
 .bible-content p {
   margin-bottom: 1.5em;
+  text-indent: 1.5em;
 }
 
 .verse-number {
   font-size: 0.8em;
   vertical-align: super;
-  color: #888;
+  color: #666;
   margin-right: 0.3em;
+  font-weight: bold;
 }
+
+.verse {
+  display: inline;
+}
+

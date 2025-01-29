@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { obtenerLibros, obtenerCapitulos, obtenerContenidoCapitulo } from "@/lib/biblia-api"
 import type { Libro, Capitulo } from "@/lib/tipos"
+import Image from "next/image"
 
 export default function PaginaPrincipal() {
   const [libros, setLibros] = useState<Libro[]>([])
@@ -77,12 +78,20 @@ export default function PaginaPrincipal() {
     cargarContenidoCapitulo(valor)
   }
 
+  const formatearContenido = (contenido: string) => {
+    return contenido.replace(/<verse number="(\d+)">(.+?)<\/verse>/g, (match, number, text) => {
+      return `<span class="verse"><span class="verse-number">${number}</span>${text}</span>`
+    })
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <Card className="max-w-4xl mx-auto shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg">
-          <CardTitle className="text-center text-4xl font-bold tracking-tight">Santa Biblia</CardTitle>
-          <p className="text-center text-indigo-100 mt-2">Reina Valera 1909</p>
+        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg flex items-center justify-center p-6">
+          <div>
+            <CardTitle className="text-center text-4xl font-bold tracking-tight">Santa Biblia</CardTitle>
+            <p className="text-center text-indigo-100 mt-2">Reina Valera 1909</p>
+          </div>
         </CardHeader>
         <CardContent className="p-6">
           <div className="flex flex-col gap-6">
@@ -134,8 +143,8 @@ export default function PaginaPrincipal() {
               <ScrollArea className="h-[60vh] mt-6 rounded-md border-2 border-indigo-100 p-6 bg-white shadow-inner">
                 <div className="prose prose-lg max-w-none dark:prose-invert">
                   <div
-                    dangerouslySetInnerHTML={{ __html: contenidoCapitulo }}
-                    className="bible-content text-gray-800"
+                    dangerouslySetInnerHTML={{ __html: formatearContenido(contenidoCapitulo) }}
+                    className="bible-content"
                   />
                 </div>
               </ScrollArea>
