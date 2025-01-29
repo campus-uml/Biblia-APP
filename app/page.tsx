@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { obtenerLibros, obtenerCapitulos, obtenerContenidoCapitulo } from "@/lib/biblia-api"
 import type { Libro, Capitulo } from "@/lib/tipos"
-import Image from "next/image"
 
 export default function PaginaPrincipal() {
   const [libros, setLibros] = useState<Libro[]>([])
