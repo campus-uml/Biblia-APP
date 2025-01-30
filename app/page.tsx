@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input";
+
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { obtenerLibros, obtenerCapitulos, obtenerContenidoCapitulo } from "@/lib/biblia-api"
@@ -9,17 +11,28 @@ import type { Libro, Capitulo } from "@/lib/tipos"
 
 export default function PaginaPrincipal() {
   const [libros, setLibros] = useState<Libro[]>([])
-  const [libroSeleccionado, setLibroSeleccionado] = useState<string>("")
-  const [nombreLibroSeleccionado, setNombreLibroSeleccionado] = useState<string>("")
+  const [librosFiltrados, setLibrosFiltrados] = useState<Libro[]>([])
+  const [libroSeleccionado, setLibroSeleccionado] = useState<Libro | null>(null)
   const [capitulos, setCapitulos] = useState<Capitulo[]>([])
-  const [capituloSeleccionado, setCapituloSeleccionado] = useState<string>("")
+  const [capituloSeleccionado, setCapituloSeleccionado] = useState<Capitulo | null>(null)
   const [contenidoCapitulo, setContenidoCapitulo] = useState<string>("")
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string>("")
+  const [busquedaLibro, setBusquedaLibro] = useState("")
+  const [busquedaCapitulo, setBusquedaCapitulo] = useState("")
 
   useEffect(() => {
     cargarLibros()
   }, [])
+
+  useEffect(() => {
+    const filtrados = libros.filter(
+      (libro) =>
+        libro.name.toLowerCase().includes(busquedaLibro.toLowerCase()) ||
+        (libro.nameLong && libro.nameLong.toLowerCase().includes(busquedaLibro.toLowerCase())),
+    )
+    setLibrosFiltrados(filtrados)
+  }, [busquedaLibro, libros])
 
   const cargarLibros = async () => {
     try {
@@ -27,6 +40,7 @@ export default function PaginaPrincipal() {
       setError("")
       const librosObtenidos = await obtenerLibros()
       setLibros(librosObtenidos)
+      setLibrosFiltrados(librosObtenidos)
     } catch (error) {
       setError("Error al cargar los libros. Por favor, intenta de nuevo.")
       console.error("Error:", error)
@@ -41,6 +55,7 @@ export default function PaginaPrincipal() {
       setError("")
       const capitulosObtenidos = await obtenerCapitulos(idLibro)
       setCapitulos(capitulosObtenidos)
+      setBusquedaCapitulo("")
     } catch (error) {
       setError("Error al cargar los capítulos. Por favor, intenta de nuevo.")
       console.error("Error:", error)
@@ -54,6 +69,7 @@ export default function PaginaPrincipal() {
       setCargando(true)
       setError("")
       const contenido = await obtenerContenidoCapitulo(idCapitulo)
+      console.log("Contenido recibido de la API:", contenido) // Log del contenido recibido
       setContenidoCapitulo(contenido)
     } catch (error) {
       setError("Error al cargar el contenido. Por favor, intenta de nuevo.")
@@ -62,35 +78,49 @@ export default function PaginaPrincipal() {
       setCargando(false)
     }
   }
-
-  const manejarCambioLibro = (valor: string) => {
-    setLibroSeleccionado(valor)
-    const libro = libros.find((l) => l.id === valor)
-    setNombreLibroSeleccionado(libro?.nameLong || libro?.name || "")
-    setCapituloSeleccionado("")
-    setContenidoCapitulo("")
-    cargarCapitulos(valor)
+  const seleccionarLibro = (libro: Libro) => {
+    setLibroSeleccionado(libro)
+    setCapitulos([]) // Reiniciar la lista de capítulos
+    setCapituloSeleccionado(null) // Reiniciar capítulo seleccionado
+    setContenidoCapitulo("") // Limpiar el contenido del capítulo
+    setBusquedaLibro("")
+    cargarCapitulos(libro.id)
   }
-
-  const manejarCambioCapitulo = (valor: string) => {
-    setCapituloSeleccionado(valor)
-    cargarContenidoCapitulo(valor)
+  
+  const seleccionarCapitulo = (capitulo: Capitulo) => {
+    setCapituloSeleccionado(capitulo)
+    cargarContenidoCapitulo(capitulo.id)
   }
 
   const formatearContenido = (contenido: string) => {
-    return contenido.replace(/<verse number="(\d+)">(.+?)<\/verse>/g, (match, number, text) => {
-      return `<span class="verse"><span class="verse-number">${number}</span>${text}</span>`
-    })
+    if (contenido.includes("<verse")) {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(contenido, "text/html")
+      const verses = doc.querySelectorAll("verse")
+      let formattedContent = ""
+
+      verses.forEach((verse) => {
+        const number = verse.getAttribute("number")
+        const text = verse.textContent
+        formattedContent += `
+        <div class="verse">
+          <span class="verse-number">${number}.</span>
+          <span class="verse-text">${text}</span>
+        </div>
+      `
+      })
+
+      return formattedContent
+    }
+    return contenido
   }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <Card className="max-w-4xl mx-auto shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg flex items-center justify-center p-6">
-          <div>
-            <CardTitle className="text-center text-4xl font-bold tracking-tight">Santa Biblia</CardTitle>
-            <p className="text-center text-indigo-100 mt-2">Reina Valera 1909</p>
-          </div>
+        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg">
+          <CardTitle className="text-center text-4xl font-bold tracking-tight">Santa Biblia</CardTitle>
+          <p className="text-center text-indigo-100 mt-2">Reina Valera 1909</p>
         </CardHeader>
         <CardContent className="p-6">
           <div className="flex flex-col gap-6">
@@ -98,53 +128,73 @@ export default function PaginaPrincipal() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block text-gray-700">Seleccionar Libro</label>
-                <Select onValueChange={manejarCambioLibro} disabled={cargando}>
-                  <SelectTrigger className="border-2 border-indigo-200 focus:border-indigo-500 transition-colors">
-                    <SelectValue placeholder="Selecciona un libro" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {libros.map((libro) => (
-                      <SelectItem key={libro.id} value={libro.id}>
+                <label className="text-sm font-medium mb-2 block text-gray-700">Buscar Libro</label>
+                <Input
+                  type="text"
+                  placeholder="Buscar libro..."
+                  value={busquedaLibro}
+                  onChange={(e) => setBusquedaLibro(e.target.value)}
+                  className="mb-2"
+                />
+                {busquedaLibro && (
+                  <ScrollArea className="h-40 border rounded-md p-2">
+                    {librosFiltrados.map((libro) => (
+                      <Button
+                        key={libro.id}
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={() => seleccionarLibro(libro)}
+                      >
                         {libro.nameLong || libro.name}
-                      </SelectItem>
+                      </Button>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </ScrollArea>
+                )}
+                {libroSeleccionado && (
+                  <p className="mt-2 font-medium">
+                    Libro seleccionado: {libroSeleccionado.nameLong || libroSeleccionado.name}
+                  </p>
+                )}
               </div>
 
               {libroSeleccionado && (
                 <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-700">Seleccionar Capítulo</label>
-                  <Select onValueChange={manejarCambioCapitulo} disabled={cargando}>
-                    <SelectTrigger className="border-2 border-indigo-200 focus:border-indigo-500 transition-colors">
-                      <SelectValue placeholder="Selecciona un capítulo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {capitulos.map((capitulo) => (
-                        <SelectItem key={capitulo.id} value={capitulo.id}>
+                  <label className="text-sm font-medium mb-2 block text-gray-700">Buscar Capítulo</label>
+                  <Input
+                    type="text"
+                    placeholder="Buscar capítulo..."
+                    value={busquedaCapitulo}
+                    onChange={(e) => setBusquedaCapitulo(e.target.value)}
+                    className="mb-2"
+                  />
+                  <ScrollArea className="h-40 border rounded-md p-2">
+                    {capitulos
+                      .filter((cap) => cap.number.toString().includes(busquedaCapitulo))
+                      .map((capitulo) => (
+                        <Button
+                          key={capitulo.id}
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => seleccionarCapitulo(capitulo)}
+                        >
                           Capítulo {capitulo.number}
-                        </SelectItem>
+                        </Button>
                       ))}
-                    </SelectContent>
-                  </Select>
+                  </ScrollArea>
                 </div>
               )}
             </div>
 
-            {nombreLibroSeleccionado && capituloSeleccionado && (
+            {libroSeleccionado && capituloSeleccionado && (
               <h2 className="text-2xl font-semibold text-center mt-6 text-indigo-800">
-                {nombreLibroSeleccionado} - Capítulo {capitulos.find((c) => c.id === capituloSeleccionado)?.number}
+                {libroSeleccionado.nameLong || libroSeleccionado.name} - Capítulo {capituloSeleccionado.number}
               </h2>
             )}
 
             {contenidoCapitulo && (
-              <ScrollArea className="h-[60vh] mt-6 rounded-md border-2 border-indigo-100 p-6 bg-white shadow-inner">
-                <div className="prose prose-lg max-w-none dark:prose-invert">
-                  <div
-                    dangerouslySetInnerHTML={{ __html: formatearContenido(contenidoCapitulo) }}
-                    className="bible-content"
-                  />
+              <ScrollArea className="h-[60vh] mt-6 rounded-md border-2 border-indigo-100 bg-white shadow-inner">
+                <div className="bible-content">
+                  <div dangerouslySetInnerHTML={{ __html: formatearContenido(contenidoCapitulo) }} />
                 </div>
               </ScrollArea>
             )}
@@ -168,3 +218,4 @@ export default function PaginaPrincipal() {
     </main>
   )
 }
+
