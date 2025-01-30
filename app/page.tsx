@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -26,12 +25,12 @@ export default function PaginaPrincipal() {
   }, [])
 
   useEffect(() => {
-    const filtrados = libros.filter(
-      (libro) =>
-        libro.name.toLowerCase().includes(busquedaLibro.toLowerCase()) ||
-        (libro.nameLong && libro.nameLong.toLowerCase().includes(busquedaLibro.toLowerCase())),
-    )
-    setLibrosFiltrados(filtrados)
+    setLibrosFiltrados(
+      libros.filter(libro => 
+        libro.name.toLowerCase().includes(busquedaLibro.toLowerCase()) || 
+        (libro.nameLong && libro.nameLong.toLowerCase().includes(busquedaLibro.toLowerCase()))
+      )
+    );
   }, [busquedaLibro, libros])
 
   const cargarLibros = async () => {
@@ -42,8 +41,7 @@ export default function PaginaPrincipal() {
       setLibros(librosObtenidos)
       setLibrosFiltrados(librosObtenidos)
     } catch (error) {
-      setError("Error al cargar los libros. Por favor, intenta de nuevo.")
-      console.error("Error:", error)
+      setError("Error al cargar los libros. Intenta de nuevo.")
     } finally {
       setCargando(false)
     }
@@ -55,10 +53,8 @@ export default function PaginaPrincipal() {
       setError("")
       const capitulosObtenidos = await obtenerCapitulos(idLibro)
       setCapitulos(capitulosObtenidos)
-      setBusquedaCapitulo("")
     } catch (error) {
-      setError("Error al cargar los capítulos. Por favor, intenta de nuevo.")
-      console.error("Error:", error)
+      setError("Error al cargar los capítulos. Intenta de nuevo.")
     } finally {
       setCargando(false)
     }
@@ -69,50 +65,26 @@ export default function PaginaPrincipal() {
       setCargando(true)
       setError("")
       const contenido = await obtenerContenidoCapitulo(idCapitulo)
-      console.log("Contenido recibido de la API:", contenido) // Log del contenido recibido
       setContenidoCapitulo(contenido)
     } catch (error) {
-      setError("Error al cargar el contenido. Por favor, intenta de nuevo.")
-      console.error("Error:", error)
+      setError("Error al cargar el contenido del capítulo. Intenta de nuevo.")
     } finally {
       setCargando(false)
     }
   }
+
   const seleccionarLibro = (libro: Libro) => {
     setLibroSeleccionado(libro)
-    setCapitulos([]) // Reiniciar la lista de capítulos
-    setCapituloSeleccionado(null) // Reiniciar capítulo seleccionado
-    setContenidoCapitulo("") // Limpiar el contenido del capítulo
+    setCapituloSeleccionado(null)
+    setContenidoCapitulo("")
     setBusquedaLibro("")
     cargarCapitulos(libro.id)
   }
-  
+
   const seleccionarCapitulo = (capitulo: Capitulo) => {
     setCapituloSeleccionado(capitulo)
+    setCapitulos([]) // Ocultar capítulos después de seleccionar uno
     cargarContenidoCapitulo(capitulo.id)
-  }
-
-  const formatearContenido = (contenido: string) => {
-    if (contenido.includes("<verse")) {
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(contenido, "text/html")
-      const verses = doc.querySelectorAll("verse")
-      let formattedContent = ""
-
-      verses.forEach((verse) => {
-        const number = verse.getAttribute("number")
-        const text = verse.textContent
-        formattedContent += `
-        <div class="verse">
-          <span class="verse-number">${number}.</span>
-          <span class="verse-text">${text}</span>
-        </div>
-      `
-      })
-
-      return formattedContent
-    }
-    return contenido
   }
 
   return (
@@ -139,25 +111,15 @@ export default function PaginaPrincipal() {
                 {busquedaLibro && (
                   <ScrollArea className="h-40 border rounded-md p-2">
                     {librosFiltrados.map((libro) => (
-                      <Button
-                        key={libro.id}
-                        variant="ghost"
-                        className="w-full justify-start"
-                        onClick={() => seleccionarLibro(libro)}
-                      >
+                      <Button key={libro.id} variant="ghost" className="w-full justify-start" onClick={() => seleccionarLibro(libro)}>
                         {libro.nameLong || libro.name}
                       </Button>
                     ))}
                   </ScrollArea>
                 )}
-                {libroSeleccionado && (
-                  <p className="mt-2 font-medium">
-                    Libro seleccionado: {libroSeleccionado.nameLong || libroSeleccionado.name}
-                  </p>
-                )}
               </div>
 
-              {libroSeleccionado && (
+              {libroSeleccionado && !capituloSeleccionado && (
                 <div>
                   <label className="text-sm font-medium mb-2 block text-gray-700">Buscar Capítulo</label>
                   <Input
@@ -168,48 +130,22 @@ export default function PaginaPrincipal() {
                     className="mb-2"
                   />
                   <ScrollArea className="h-40 border rounded-md p-2">
-                    {capitulos
-                      .filter((cap) => cap.number.toString().includes(busquedaCapitulo))
-                      .map((capitulo) => (
-                        <Button
-                          key={capitulo.id}
-                          variant="ghost"
-                          className="w-full justify-start"
-                          onClick={() => seleccionarCapitulo(capitulo)}
-                        >
-                          Capítulo {capitulo.number}
-                        </Button>
-                      ))}
+                    {capitulos.map((capitulo) => (
+                      <Button key={capitulo.id} variant="ghost" className="w-full justify-start" onClick={() => seleccionarCapitulo(capitulo)}>
+                        Capítulo {capitulo.number}
+                      </Button>
+                    ))}
                   </ScrollArea>
                 </div>
               )}
             </div>
 
-            {libroSeleccionado && capituloSeleccionado && (
-              <h2 className="text-2xl font-semibold text-center mt-6 text-indigo-800">
-                {libroSeleccionado.nameLong || libroSeleccionado.name} - Capítulo {capituloSeleccionado.number}
-              </h2>
-            )}
-
-            {contenidoCapitulo && (
-              <ScrollArea className="h-[60vh] mt-6 rounded-md border-2 border-indigo-100 bg-white shadow-inner">
-                <div className="bible-content">
-                  <div dangerouslySetInnerHTML={{ __html: formatearContenido(contenidoCapitulo) }} />
-                </div>
-              </ScrollArea>
-            )}
-
-            {cargando && (
-              <div className="text-center py-8">
-                <div
-                  className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-solid border-indigo-500 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
-                  role="status"
-                >
-                  <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-                    Cargando...
-                  </span>
-                </div>
-                <p className="mt-4 text-lg text-indigo-600">Cargando...</p>
+            {capituloSeleccionado && contenidoCapitulo && (
+              <div className="mt-6 bg-white p-4 rounded-md shadow">
+                <h2 className="text-2xl font-semibold text-indigo-800 text-center">
+                  {libroSeleccionado?.nameLong || libroSeleccionado?.name} - Capítulo {capituloSeleccionado.number}
+                </h2>
+                <p className="mt-4 text-gray-700">{contenidoCapitulo}</p>
               </div>
             )}
           </div>
@@ -218,4 +154,3 @@ export default function PaginaPrincipal() {
     </main>
   )
 }
-
