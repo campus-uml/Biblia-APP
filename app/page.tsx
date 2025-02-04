@@ -169,12 +169,7 @@ export default function PaginaPrincipal() {
                 {busquedaLibro && (
                   <ScrollArea className="h-40 border rounded-md p-2">
                     {librosFiltrados.map((libro) => (
-                      <Button
-                        key={libro.id}
-                        variant="ghost"
-                        className="w-full justify-start"
-                        onClick={() => seleccionarLibro(libro)}
-                      >
+                      <Button key={libro.id} className="w-full justify-start" onClick={() => seleccionarLibro(libro)}>
                         <Book className="w-4 h-4 mr-2" />
                         {libro.nameLong || libro.name}
                       </Button>
