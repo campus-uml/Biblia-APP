@@ -1,15 +1,23 @@
-const API_KEY = "7648df66a8283f2572bcc2f3f5680b0a"
+const API_KEY = process.env.PUBLIC_BIBLE_API_KEY
 const API_URL = "https://api.scripture.api.bible/v1/bibles"
 const BIBLE_ID = "592420522e16049f-01" // Reina Valera 1909
 
 import type { Libro, Capitulo } from "./tipos"
 
+// Función auxiliar para crear los headers
+const getHeaders = () => {
+  if (!API_KEY) {
+    throw new Error("API_KEY no está definida")
+  }
+  return {
+    "api-key": API_KEY,
+  }
+}
+
 export async function obtenerLibros(): Promise<Libro[]> {
   try {
     const response = await fetch(`${API_URL}/${BIBLE_ID}/books`, {
-      headers: {
-        "api-key": API_KEY,
-      },
+      headers: getHeaders(),
     })
 
     if (!response.ok) {
@@ -27,9 +35,7 @@ export async function obtenerLibros(): Promise<Libro[]> {
 export async function obtenerCapitulos(idLibro: string): Promise<Capitulo[]> {
   try {
     const response = await fetch(`${API_URL}/${BIBLE_ID}/books/${idLibro}/chapters`, {
-      headers: {
-        "api-key": API_KEY,
-      },
+      headers: getHeaders(),
     })
 
     if (!response.ok) {
@@ -47,9 +53,7 @@ export async function obtenerCapitulos(idLibro: string): Promise<Capitulo[]> {
 export async function obtenerContenidoCapitulo(idCapitulo: string): Promise<string> {
   try {
     const response = await fetch(`${API_URL}/${BIBLE_ID}/chapters/${idCapitulo}?content-type=text`, {
-      headers: {
-        "api-key": API_KEY,
-      },
+      headers: getHeaders(),
     })
 
     if (!response.ok) {
@@ -63,4 +67,3 @@ export async function obtenerContenidoCapitulo(idCapitulo: string): Promise<stri
     throw error
   }
 }
-
