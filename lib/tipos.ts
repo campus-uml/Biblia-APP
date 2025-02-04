@@ -1,4 +1,5 @@
 export interface Libro {
+    nombre: any
     id: string
     name: string // Cambiado de 'nombre' a 'name' para coincidir con la API
     nameLong: string // Cambiado de 'nombreLargo' a 'nameLong' para coincidir con la API

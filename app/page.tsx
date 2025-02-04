@@ -1,18 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { obtenerLibros, obtenerCapitulos, obtenerContenidoCapitulo } from "@/lib/biblia-api"
 import type { Libro, Capitulo } from "@/lib/tipos"
 import { supabase } from "@/lib/supabase"
-import { Book, ChevronRight, LogOut } from "lucide-react"
+import { LogOut } from "lucide-react"
+import Link from "next/link"
 import Login from "@/components/Login"
 import type { Session } from "@supabase/supabase-js"
+import type React from "react" // Added import for React
 
-export default function PaginaPrincipal() {
+export default function Home() {
   const [libros, setLibros] = useState<Libro[]>([])
   const [librosFiltrados, setLibrosFiltrados] = useState<Libro[]>([])
   const [libroSeleccionado, setLibroSeleccionado] = useState<Libro | null>(null)
@@ -45,93 +43,61 @@ export default function PaginaPrincipal() {
     }
   }, [session])
 
-  useEffect(() => {
-    const filtrados = libros.filter(
-      (libro) =>
-        libro.name.toLowerCase().includes(busquedaLibro.toLowerCase()) ||
-        (libro.nameLong && libro.nameLong.toLowerCase().includes(busquedaLibro.toLowerCase())),
-    )
-    setLibrosFiltrados(filtrados)
-  }, [busquedaLibro, libros])
-
   const cargarLibros = async () => {
+    setCargando(true)
     try {
-      setCargando(true)
-      setError("")
       const librosObtenidos = await obtenerLibros()
       setLibros(librosObtenidos)
       setLibrosFiltrados(librosObtenidos)
+      setCargando(false)
     } catch (error) {
-      setError("Error al cargar los libros. Por favor, intenta de nuevo.")
-      console.error("Error:", error)
-    } finally {
+      setError("Error al cargar los libros")
       setCargando(false)
     }
   }
 
-  const cargarCapitulos = async (idLibro: string) => {
-    try {
-      setCargando(true)
-      setError("")
-      const capitulosObtenidos = await obtenerCapitulos(idLibro)
-      setCapitulos(capitulosObtenidos)
-      setBusquedaCapitulo("")
-    } catch (error) {
-      setError("Error al cargar los capítulos. Por favor, intenta de nuevo.")
-      console.error("Error:", error)
-    } finally {
-      setCargando(false)
-    }
+  const handleBuscarLibro = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setBusquedaLibro(event.target.value)
+    const filtro = event.target.value.toLowerCase()
+    setLibrosFiltrados(libros.filter((libro) => libro.nombre.toLowerCase().includes(filtro)))
   }
 
-  const cargarContenidoCapitulo = async (idCapitulo: string) => {
-    try {
-      setCargando(true)
-      setError("")
-      const contenido = await obtenerContenidoCapitulo(idCapitulo)
-      setContenidoCapitulo(contenido)
-    } catch (error) {
-      setError("Error al cargar el contenido. Por favor, intenta de nuevo.")
-      console.error("Error:", error)
-    } finally {
-      setCargando(false)
-    }
-  }
-
-  const seleccionarLibro = (libro: Libro) => {
+  const handleSeleccionarLibro = async (libro: Libro) => {
     setLibroSeleccionado(libro)
-    cargarCapitulos(libro.id)
-    setBusquedaLibro("")
-    setCapituloSeleccionado(null)
-    setContenidoCapitulo("")
-  }
-
-  const seleccionarCapitulo = (capitulo: Capitulo) => {
-    setCapituloSeleccionado(capitulo)
-    cargarContenidoCapitulo(capitulo.id)
-  }
-
-  const formatearContenido = (contenido: string) => {
-    if (contenido.includes("<verse")) {
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(contenido, "text/html")
-      const verses = doc.querySelectorAll("verse")
-      let formattedContent = ""
-
-      verses.forEach((verse) => {
-        const number = verse.getAttribute("number")
-        const text = verse.textContent?.trim()
-        formattedContent += `
-          <p class="verse">
-            <span class="verse-number">${number}</span>
-            <span class="verse-text">${text}</span>
-          </p>
-        `
-      })
-
-      return formattedContent
+    setCargando(true)
+    try {
+      const capitulosObtenidos = await obtenerCapitulos(libro.id)
+      setCapitulos(capitulosObtenidos)
+      setCargando(false)
+    } catch (error) {
+      setError("Error al cargar los capítulos")
+      setCargando(false)
     }
-    return contenido
+  }
+
+  const handleSeleccionarCapitulo = async (capitulo: Capitulo) => {
+    setCapituloSeleccionado(capitulo)
+    setCargando(true)
+    try {
+      const contenido = await obtenerContenidoCapitulo(capitulo.id)
+      setContenidoCapitulo(contenido)
+      setCargando(false)
+    } catch (error) {
+      setError("Error al cargar el contenido del capítulo")
+      setCargando(false)
+    }
+  }
+
+  const handleBuscarCapitulo = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setBusquedaCapitulo(event.target.value)
+  }
+
+  const handleLogout = () => {
+    supabase.auth.signOut()
+  }
+
+  if (cargando && !session) {
+    return <div>Cargando...</div>
   }
 
   if (!session) {
@@ -139,113 +105,33 @@ export default function PaginaPrincipal() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-      <Card className="max-w-4xl mx-auto shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg relative">
-          <CardTitle className="text-center text-4xl font-bold tracking-tight">Santa Biblia</CardTitle>
-          <p className="text-center text-indigo-100 mt-2">Reina Valera 1909</p>
-          <Button
-            onClick={() => supabase.auth.signOut()}
-            className="absolute top-4 right-4 bg-white text-indigo-600 hover:bg-indigo-100"
+    <div className="flex flex-col items-center justify-center min-h-screen py-2">
+      <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
+        <h1 className="text-6xl font-bold">
+          Bienvenido a la <span className="text-blue-600">Biblia App</span>
+        </h1>
+
+        <p className="mt-3 text-2xl">Comienza tu estudio bíblico aquí</p>
+
+        <div className="flex flex-wrap items-center justify-around max-w-4xl mt-6 sm:w-full">
+          <Link
+            href="/biblia"
+            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Cerrar sesión
-          </Button>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-6">
-            {error && <div className="bg-red-50 text-red-500 p-4 rounded-md text-center">{error}</div>}
+            <h3 className="text-2xl font-bold">Leer la Biblia &rarr;</h3>
+            <p className="mt-4 text-xl">Explora los libros y capítulos de la Biblia.</p>
+          </Link>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block text-gray-700">Buscar Libro</label>
-                <Input
-                  type="text"
-                  placeholder="Buscar libro..."
-                  value={busquedaLibro}
-                  onChange={(e) => setBusquedaLibro(e.target.value)}
-                  className="mb-2"
-                />
-                {busquedaLibro && (
-                  <ScrollArea className="h-40 border rounded-md p-2">
-                    {librosFiltrados.map((libro) => (
-                      <Button
-                        key={libro.id}
-                        className="w-full justify-start hover:bg-gray-100"
-                        onClick={() => seleccionarLibro(libro)}
-                      >
-                        <Book className="w-4 h-4 mr-2" />
-                        {libro.nameLong || libro.name}
-                      </Button>
-                    ))}
-                  </ScrollArea>
-                )}
-                {libroSeleccionado && (
-                  <p className="mt-2 font-medium">
-                    Libro seleccionado: {libroSeleccionado.nameLong || libroSeleccionado.name}
-                  </p>
-                )}
-              </div>
-
-              {libroSeleccionado && (
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-700">Buscar Capítulo</label>
-                  <Input
-                    type="text"
-                    placeholder="Buscar capítulo..."
-                    value={busquedaCapitulo}
-                    onChange={(e) => setBusquedaCapitulo(e.target.value)}
-                    className="mb-2"
-                  />
-                  <ScrollArea className="h-40 border rounded-md p-2">
-                    {capitulos
-                      .filter((cap) => cap.number.toString().includes(busquedaCapitulo))
-                      .map((capitulo) => (
-                        <Button
-                          key={capitulo.id}
-                          className="w-full justify-start hover:bg-gray-100"
-                          onClick={() => seleccionarCapitulo(capitulo)}
-                        >
-                          <ChevronRight className="w-4 h-4 mr-2" />
-                          Capítulo {capitulo.number}
-                        </Button>
-                      ))}
-                  </ScrollArea>
-                </div>
-              )}
-            </div>
-
-            {libroSeleccionado && capituloSeleccionado && (
-              <h2 className="text-2xl font-semibold text-center mt-6 text-indigo-800">
-                {libroSeleccionado.nameLong || libroSeleccionado.name} - Capítulo {capituloSeleccionado.number}
-              </h2>
-            )}
-
-            {contenidoCapitulo && (
-              <ScrollArea className="h-[60vh] mt-6 rounded-md border-2 border-indigo-100 bg-white shadow-inner">
-                <div className="bible-content">
-                  <div dangerouslySetInnerHTML={{ __html: formatearContenido(contenidoCapitulo) }} />
-                </div>
-              </ScrollArea>
-            )}
-
-            {cargando && (
-              <div className="text-center py-8">
-                <div
-                  className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-solid border-indigo-500 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
-                  role="status"
-                >
-                  <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-                    Cargando...
-                  </span>
-                </div>
-                <p className="mt-4 text-lg text-indigo-600">Cargando...</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+          <button
+            onClick={handleLogout}
+            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
+          >
+            <LogOut className="h-6 w-6 inline mr-2" />
+            <h3 className="text-2xl font-bold">Cerrar Sesión &rarr;</h3>
+          </button>
+        </div>
+      </main>
+    </div>
   )
 }
 
